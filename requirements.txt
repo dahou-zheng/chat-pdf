@@ -4,5 +4,5 @@ langchain-core>=0.1.0
 streamlit>=1.35.0
 faiss-cpu
 PyMuPDF
-langchain_ollama
+# langchain_ollama
 ollama
