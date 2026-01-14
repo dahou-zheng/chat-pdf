@@ -1,8 +1,8 @@
-langchain>=0.1.20
-langchain-community>=0.0.26
-langchain-core>=0.1.0
-streamlit>=1.35.0
+langchain
+langchain-community
+langchain-core
+streamlit
 faiss-cpu
-PyMuPDF
-# langchain_ollama
+fitz
+langchain_ollama
 ollama

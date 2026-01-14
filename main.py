@@ -1,10 +1,8 @@
 import os
 import streamlit as st
-from io import BytesIO
-import fitz  # PyMuPDF
+from src.document_processor import load_documents
 
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.documents import Document
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
@@ -12,20 +10,6 @@ from langchain_community.vectorstores import FAISS
 from langchain_ollama import OllamaEmbeddings
 from langchain_ollama import OllamaLLM
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-
-# -------------------------------
-# Load PDFs using PyMuPDF
-# -------------------------------
-def load_documents(uploaded_files):
-    documents = []
-    for uploaded_file in uploaded_files:
-        pdf_content = BytesIO(uploaded_file.read())
-        with fitz.open(stream=pdf_content, filetype="pdf") as doc:
-            text = "".join(page.get_text() for page in doc)
-        if text:
-            documents.append(Document(page_content=text, metadata={"file_name": uploaded_file.name}))
-    return documents
 
 
 # -------------------------------
