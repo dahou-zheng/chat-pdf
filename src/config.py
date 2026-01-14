@@ -15,11 +15,11 @@ META_PATH = os.path.join(VECTOR_STORE_DIR, "meta.json")
 
 EMBEDDING_URL = "https://api.openai.com/v1/embeddings"
 EMBEDDING_MODEL = "text-embedding-3-small"
+EMBEDDING_DIM = 1536  # adjust based on the embedding model used
 DEFAULT_MODEL = "gpt-4o-mini"
 
-
 DEFAULT_TOP_K = 10
-DEFAULT_BATCH_SIZE = 16
+DEFAULT_BATCH_SIZE = 32
 
 
 
