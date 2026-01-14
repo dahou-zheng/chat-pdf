@@ -7,3 +7,4 @@ fitz
 langchain_ollama
 ollama
 tiktoken
+requests
