@@ -5,6 +5,8 @@ import os
 from typing import Dict, Iterable, List, Tuple
 import faiss
 from embedding import embedding
+from collections import defaultdict
+from langchain_core.documents import Document
 from document_processor import _load_local_documents, split_documents_to_text_chunks
 import numpy as np
 from config import (
@@ -58,7 +60,8 @@ class FaissManager:
             self.meta = self.load_meta()
         else:  # create new index
             self.index = FaissManager.create_index()
-            self.meta: Dict[int, str] = {}
+            # inside chunks, key: chunk_id (str), value: (text, file_name)
+            self.meta = {"next_id": 0, "files": defaultdict(list), "chunks": dict()}
 
     @staticmethod
     def create_index(dim: int = EMBEDDING_DIM) -> faiss.IndexFlatIP:
@@ -73,38 +76,59 @@ class FaissManager:
         os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
         faiss.write_index(self.index, self.index_path)
 
-    def load_meta(self) -> Dict[int, str]:
+    def load_meta(self) -> Dict:
         with open(self.meta_path, "r", encoding="utf-8") as f:
-            raw = json.load(f)
-        return {int(k): str(v) for k, v in raw.items()}
+            meta = json.load(f)
+        return meta
 
     def save_meta(self) -> None:
         # in case the config changes, and the new directory doesn't exist
         os.makedirs(os.path.dirname(self.meta_path), exist_ok=True)
         with open(self.meta_path, "w", encoding="utf-8") as file:
             # indent=2 for readability, ensure_ascii=False for unicode support
-            json.dump({str(index): text for index, text in self.meta.items()}, file, ensure_ascii=False, indent=2)
+            json.dump(self.meta, file, ensure_ascii=False, indent=2)
 
     def save(self) -> None:
         self.save_index()
         self.save_meta()
 
-    def add_texts(self, texts: List[str]) -> Tuple[faiss.Index, Dict[int, str]]:
+    def clear(self) -> None:
+        """
+        Clear the FAISS index and metadata.
+        """
+        if os.path.exists(self.index_path):
+            os.remove(self.index_path)
+        if os.path.exists(self.meta_path):
+            os.remove(self.meta_path)
+
+    def reset(self) -> None:
+        """
+        Clear the saved index and meta file, then reset the FAISS index and metadata to initial state.
+        """
+        self.clear()
+        self.index.reset()
+        self.meta = {"next_id": 0, "files": defaultdict(list), "chunks": dict()}
+
+    def add_chunks(self, chunks: List[Document]) -> Tuple[faiss.Index, Dict[int, str]]:
         """
         Add new texts to the FAISS index.
         """
-        if not texts:
+        if not chunks:
             return
+        texts = [chunk.page_content for chunk in chunks if chunk.page_content]
+        file_names = [chunk.metadata.get("file_name", "unknown") for chunk in chunks if chunk.page_content]
 
         vectors = _embed_texts(texts)
         faiss.normalize_L2(vectors)  # in-place L2 normalization
 
-        start_id = (max(self.meta.keys()) + 1) if self.meta else 0
+        start_id = self.meta["next_id"]
+        self.meta["next_id"] += len(texts)
         ids = np.arange(start_id, start_id + len(texts)).astype("int64")
 
         self.index.add_with_ids(vectors, ids)
-        for i, t in zip(ids.tolist(), texts):
-            self.meta[i] = t
+        for i, t, f in zip(ids.tolist(), texts, file_names):
+            self.meta["chunks"][str(i)] = (t, f)
+            self.meta["files"][f].append(i)
 
     def search(self, query: str, top_k: int = DEFAULT_TOP_K) -> List[Dict[str, object]]:
         """
@@ -118,7 +142,8 @@ class FaissManager:
         for score, _id in zip(scores[0].tolist(), ids[0].tolist()):
             # when FAISS doesn't have enough results to fill top_k, it pads score and id with -1
             if _id != -1:
-                out.append({"id": int(_id), "score": float(score), "text": self.meta.get(int(_id), "")})
+                text_chunk, file_name = self.meta["chunks"].get(str(_id), ("", ""))
+                out.append({"id": int(_id), "score": float(score), "file_name": file_name, "text": text_chunk})
         return out
 
 
@@ -130,14 +155,17 @@ if __name__ == "__main__":
     else:
         print("Creating new index...")
         index_manager = FaissManager()
-        documents = _load_local_documents(TEST_PDFS_DIR)
-        text_chunks = split_documents_to_text_chunks(documents)
-        index_manager.add_texts(text_chunks)
+        test_documents = _load_local_documents(TEST_PDFS_DIR)
+        test_chunks = split_documents_to_text_chunks(test_documents)
+        index_manager.add_chunks(test_chunks)
         index_manager.save()
 
     test_query = "What is natural language processing?"
     results = index_manager.search(test_query, top_k=5)
     print(f"Query: {test_query}")
     for r in results:
-        print(f"--------------------------------\n{r['text']}\n")
+        print(f"--------------------------------\nscore: {r['score']}, file name: {r['file_name']}\n")
+        print(f"--------------------------------\n{r['text'][:100]}\n")  # print first 100 chars of each result
+
+    index_manager.reset()
 

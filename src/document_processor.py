@@ -81,7 +81,7 @@ def split_documents_to_text_chunks(
         length_function=length_function
     )
     chunks = textsplit.split_documents(documents)
-    return [chunk.page_content for chunk in chunks if chunk.page_content]
+    return chunks
 
 
 if __name__ == '__main__':
@@ -100,10 +100,10 @@ if __name__ == '__main__':
     else:
         documents = _load_local_documents(TEST_PDFS_DIR)
         print(f'number of pdf documents: {len(documents)}')
-        text_chunks_by_token_length = split_documents_to_text_chunks(documents, length_function=num_tokens_from_string)
-        print(f'number of text chunks chunked by token length: {len(text_chunks_by_token_length)}')
-        text_chunks_by_str_length = split_documents_to_text_chunks(documents, length_function=len)
-        print(f'number of text chunks chunked by string length: {len(text_chunks_by_str_length)}')
+        chunks_by_token_length = split_documents_to_text_chunks(documents, length_function=num_tokens_from_string)
+        print(f'number of text chunks chunked by token length: {len(chunks_by_token_length)}')
+        chunks_by_str_length = split_documents_to_text_chunks(documents, length_function=len)
+        print(f'number of text chunks chunked by string length: {len(chunks_by_str_length)}')
 
 
 
