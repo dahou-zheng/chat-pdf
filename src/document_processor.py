@@ -29,7 +29,6 @@ def _load_local_documents(pdf_directory: str) -> List[Document]:
 
     Returns the same type as load_documents → List[Document]
     """
-
     documents = []
     pdf_files = os.listdir(pdf_directory)
 
@@ -52,7 +51,7 @@ def _load_local_documents(pdf_directory: str) -> List[Document]:
     return documents
 
 
-def num_tokens_from_string(string):
+def num_tokens_from_string(string: str) -> int:
     """
     Use token length instead of string length as a better text splitting method.
 
