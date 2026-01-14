@@ -6,3 +6,4 @@ faiss-cpu
 fitz
 langchain_ollama
 ollama
+tiktoken
