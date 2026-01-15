@@ -146,6 +146,18 @@ class FaissManager:
                 out.append({"id": int(_id), "score": float(score), "file_name": file_name, "text": text_chunk})
         return out
 
+    def delete_file(self, file_name) -> None:
+        """
+        Delete all text chunks, meta, and vectors associated with a specific file
+        """
+        ids_to_remove = np.array(self.meta['files'][file_name], dtype=np.int64)
+        self.index.remove_ids(faiss.IDSelectorBatch(ids_to_remove))
+
+        for int_id in self.meta['files'][file_name]:
+            del self.meta["chunks"][str(int_id)]
+
+        del self.meta['files'][file_name]
+
 
 if __name__ == "__main__":
     # 1) If index/meta files exist, load them; otherwise create new from PDF
@@ -161,11 +173,22 @@ if __name__ == "__main__":
         index_manager.save()
 
     test_query = "What is natural language processing?"
-    results = index_manager.search(test_query, top_k=5)
+    results = index_manager.search(test_query, top_k=3)
     print(f"Query: {test_query}")
     for r in results:
         print(f"--------------------------------\nscore: {r['score']}, file name: {r['file_name']}\n")
         print(f"--------------------------------\n{r['text'][:100]}\n")  # print first 100 chars of each result
 
-    index_manager.reset()
+    index_manager.delete_file("AttentionIsAllYouNeed.pdf")
+    index_manager.save()
+    if os.path.exists(index_manager.index_path):
+        print("Index File saved")
+    else:
+        print("Warning: Index File not saved")
+    index_manager.clear()
+    if os.path.exists(index_manager.index_path):
+        print("Index File deleted")
+    else:
+        print("Warning: Index File not deleted")
+
 
