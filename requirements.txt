@@ -2,10 +2,11 @@ langchain
 langchain-community
 langchain-core
 streamlit
-faiss
+faiss-cpu
 fitz
 langchain_ollama
 ollama
 tiktoken
 requests
 numpy
+openai
