@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List
 import faiss
 from embedding import embedding
 from collections import defaultdict
@@ -64,7 +64,7 @@ class FaissManager:
             self.meta = {"next_id": 0, "files": defaultdict(list), "chunks": dict()}
 
     @staticmethod
-    def create_index(dim: int = EMBEDDING_DIM) -> faiss.IndexFlatIP:
+    def create_index(dim: int = EMBEDDING_DIM) -> faiss.Index:
         base = faiss.IndexFlatIP(dim)
         return faiss.IndexIDMap2(base)
 
@@ -109,7 +109,7 @@ class FaissManager:
         self.index.reset()
         self.meta = {"next_id": 0, "files": defaultdict(list), "chunks": dict()}
 
-    def add_chunks(self, chunks: List[Document]) -> Tuple[faiss.Index, Dict[int, str]]:
+    def add_chunks(self, chunks: List[Document]) -> None:
         """
         Add new texts to the FAISS index.
         """
@@ -146,10 +146,14 @@ class FaissManager:
                 out.append({"id": int(_id), "score": float(score), "file_name": file_name, "text": text_chunk})
         return out
 
-    def delete_file(self, file_name) -> None:
+    def delete_file(self, file_name) -> bool:
         """
         Delete all text chunks, meta, and vectors associated with a specific file
         """
+        if file_name not in self.meta['files']:
+            print(f"File '{file_name}' not found in index.")
+            return False
+
         ids_to_remove = np.array(self.meta['files'][file_name], dtype=np.int64)
         self.index.remove_ids(faiss.IDSelectorBatch(ids_to_remove))
 
@@ -157,6 +161,8 @@ class FaissManager:
             del self.meta["chunks"][str(int_id)]
 
         del self.meta['files'][file_name]
+
+        return True
 
 
 if __name__ == "__main__":
@@ -180,6 +186,14 @@ if __name__ == "__main__":
         print(f"--------------------------------\n{r['text'][:100]}\n")  # print first 100 chars of each result
 
     index_manager.delete_file("AttentionIsAllYouNeed.pdf")
+
+    results = index_manager.search(test_query, top_k=3)
+    print("Same query, but this time AttentionIsAllYouNeed.pdf has been deleted.")
+    print(f"Query: {test_query}")
+    for r in results:
+        print(f"--------------------------------\nscore: {r['score']}, file name: {r['file_name']}\n")
+        print(f"--------------------------------\n{r['text'][:100]}\n")  # print first 100 chars of each result
+
     index_manager.save()
     if os.path.exists(index_manager.index_path):
         print("Index File saved")
@@ -187,8 +201,8 @@ if __name__ == "__main__":
         print("Warning: Index File not saved")
     index_manager.clear()
     if os.path.exists(index_manager.index_path):
-        print("Index File deleted")
-    else:
         print("Warning: Index File not deleted")
+    else:
+        print("Index File deleted")
 
 
