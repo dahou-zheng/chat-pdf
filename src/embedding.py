@@ -2,10 +2,14 @@ from __future__ import annotations
 
 from typing import List
 import requests
-from config import OPENAI_API_KEY, EMBEDDING_MODEL
+from src.config import OPENAI_API_KEY, EMBEDDING_MODEL, EMBEDDING_URL
 
 
-def embedding(inputs: List[str], model: str = EMBEDDING_MODEL) -> List[List[float]]:
+def embedding(
+        inputs: List[str],
+        model: str = EMBEDDING_MODEL,
+        model_url: str = EMBEDDING_URL
+) -> List[List[float]]:
     """Get embeddings from the embedding service"""
 
     headers = {
@@ -17,7 +21,7 @@ def embedding(inputs: List[str], model: str = EMBEDDING_MODEL) -> List[List[floa
         "model": model
     }
 
-    response = requests.post(model, headers=headers, json=data)
+    response = requests.post(model_url, headers=headers, json=data)
     outputs = [output['embedding'] for output in response.json()['data']]
     return outputs
 
