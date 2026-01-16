@@ -4,8 +4,6 @@ langchain-core
 streamlit
 faiss-cpu
 fitz
-langchain_ollama
-ollama
 tiktoken
 requests
 numpy
