@@ -6,12 +6,12 @@ import fitz  # PyMuPDF
 import tiktoken
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from typing import List, IO, Callable
+from typing import List, IO, Callable, Iterable
 import streamlit as st
 from src.config import TEST_PDFS_DIR
 
 
-def load_documents(uploaded_files: List[IO]) -> List[Document]:
+def load_documents(uploaded_files: Iterable[IO]) -> List[Document]:
     """Load pdf documents from streamlit file_uploader and extract them to text documents."""
     documents = []
     for uploaded_file in uploaded_files:
