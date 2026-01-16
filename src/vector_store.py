@@ -4,12 +4,13 @@ import json
 import os
 from typing import Dict, Iterable, List
 import faiss
-from embedding import embedding
+import numpy as np
 from collections import defaultdict
 from langchain_core.documents import Document
-from document_processor import _load_local_documents, split_documents_to_text_chunks
-import numpy as np
-from config import (
+
+from src.embedding import embedding
+from src.document_processor import _load_local_documents, split_documents_to_text_chunks
+from src.config import (
     DEFAULT_BATCH_SIZE,
     EMBEDDING_DIM,
     VECTOR_INDEX_PATH,
