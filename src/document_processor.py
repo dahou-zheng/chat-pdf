@@ -8,7 +8,7 @@ from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List, IO, Callable
 import streamlit as st
-from config import TEST_PDFS_DIR
+from src.config import TEST_PDFS_DIR
 
 
 def load_documents(uploaded_files: List[IO]) -> List[Document]:
