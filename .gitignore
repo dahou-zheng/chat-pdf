@@ -4,6 +4,9 @@
 # Anaconda/environment related files
 anaconda_projects/
 
+# Ignore only this specific notebook inside src/
+src/testing.ipynb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
