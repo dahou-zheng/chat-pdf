@@ -4,9 +4,9 @@ import openai
 from collections import defaultdict
 from heapq import nlargest
 from typing import List, Dict, Callable, Any
-from document_processor import _load_local_documents, split_documents_to_text_chunks
-from vector_store import FaissManager
-from config import (
+from src.document_processor import _load_local_documents, split_documents_to_text_chunks
+from src.vector_store import FaissManager
+from src.config import (
     OPENAI_API_KEY,
     DEFAULT_MODEL,
     TEST_PDFS_DIR,
@@ -24,27 +24,17 @@ def load_client(api_key: str = OPENAI_API_KEY) -> openai.OpenAI:
             raise ValueError("OPENAI_API_KEY is missing from configuration.")
 
         client = openai.OpenAI(api_key=api_key)
-
-        # A "ping" check to verify connectivity/quota immediately
-        client.models.list()
-
         return client
-
     except openai.APIConnectionError as e:
-        print(f"Error: The server could not be reached. {e}")
-        sys.exit(1)
+        raise ConnectionError(f"Could not connect to OpenAI API: {e}") from e
     except openai.AuthenticationError as e:
-        print(f"Error: Your OpenAI API key or token is invalid. {e}")
-        sys.exit(1)
+        raise ValueError(f"Invalid OpenAI API key or token: {e}") from e
     except openai.RateLimitError as e:
-        print(f"Error: You have hit your OpenAI rate limit or quota: {e}")
-        sys.exit(1)
+        raise RuntimeError(f"OpenAI rate limit / quota exceeded: {e}") from e
+    except openai.OpenAIError as e:  # catches most other official OpenAI errors
+        raise RuntimeError(f"OpenAI API error: {e}") from e
     except Exception as e:
-        print(f"An unexpected error occurred during OpenAI initialization: {e}")
-        sys.exit(1)
-
-
-client = load_client()
+        raise RuntimeError(f"Unexpected error during OpenAI initialization: {e}") from e
 
 
 def handle_openai_errors(func: Callable) -> Callable:
@@ -80,8 +70,18 @@ def handle_openai_errors(func: Callable) -> Callable:
 
 
 @handle_openai_errors
+def test_connection(client: openai.OpenAI) -> None:
+    """
+    Test OpenAI API connection by making a simple request.
+    Raises an exception if the connection fails.
+    """
+    client.models.list()
+
+
+@handle_openai_errors
 def generate_query_reformulations(
         original_query: str,
+        client: openai.OpenAI,
         model: str = DEFAULT_MODEL,
         num_reformulations: int = 3,
         temperature: float = 0.8,
@@ -211,6 +211,7 @@ def format_context(results: List[Dict]) -> str:
 def generate_answer(
         context_text: str,
         user_question: str,
+        client: openai.OpenAI,
         model: str = DEFAULT_MODEL,
         temperature: float = 0.7,
         max_tokens: int = 1500
@@ -268,6 +269,7 @@ Please answer:"""
 def condense_multi_turn_query(
         conversation_history: List[Dict[str, str]],
         current_question: str,
+        client: openai.OpenAI,
         model: str = DEFAULT_MODEL,
         temperature: float = 0.2,
         max_tokens: int = 200
@@ -343,8 +345,12 @@ if __name__ == "__main__":
     index_manager.add_chunks(test_chunks)
 
     # Test example
+    print("Load client and check connection")
+    client = load_client()
+    test_connection(client)
+
     test_question = "Why do language models follow instructions? Is Human feedback also reducing hallucination?"
-    test_reformulations = generate_query_reformulations(test_question)
+    test_reformulations = generate_query_reformulations(test_question, client)
 
     # Search relevant content from FAISS
     print(f"Searching question and reformulated questions: {test_question} and {test_reformulations}")
@@ -373,7 +379,7 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # Generate answer
-    test_answer = generate_answer(context_text=context, user_question=test_question)
+    test_answer = generate_answer(context, test_question, client)
 
     print("\nQuestion:", test_question)
     print("\nAnswer:", test_answer)
@@ -381,7 +387,7 @@ if __name__ == "__main__":
     test_followup_question = ("So, hallucination reduction isn't the main progress, "
                               "then what is the major achievement of this training method?")
     conversation_history = [{"role": "user", "content": test_question}, {"role": "assistant", "content": test_answer}]
-    condensed_query = condense_multi_turn_query(conversation_history, test_followup_question)
+    condensed_query = condense_multi_turn_query(conversation_history, test_followup_question, client)
     print("\nOriginal Follow-up Question:", test_followup_question)
     print("\nCondensed Follow-up Query:", condensed_query)
     print("Now, input the condensed query to generate_query_reformulations function, this process can be repeated.")
