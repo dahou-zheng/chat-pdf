@@ -22,8 +22,8 @@ with st.sidebar:
     st.markdown("---")
     model_configuration()
     st.markdown("---")
-    connection_checker()
-    st.markdown("---")
     index_status()
+    st.markdown("---")
+    connection_checker()
 
 
