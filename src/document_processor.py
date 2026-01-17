@@ -63,7 +63,7 @@ def num_tokens_from_string(string: str) -> int:
 
 
 def split_documents_to_text_chunks(
-    documents: List[Document],
+    documents: Iterable[Document],
     *,
     chunk_size: int = 512,
     chunk_overlap: int = 64,
