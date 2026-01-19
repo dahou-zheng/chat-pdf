@@ -13,7 +13,7 @@ An AI-powered document assistant that enables users to upload PDF files and ask 
 
 ### Prerequisites
 
-- Python **3.13** (developed and tested with 3.13.5)
+- Python **3.13**
 - All dependencies are listed in `requirements.txt`
 
 ### Installation
@@ -52,7 +52,7 @@ streamlit run app.py
 - **Embeddings**: OpenAI Embeddings
 - **Vector Store**: FAISS (local in-memory / persistent index)
 - **PDF Processing**: PyMuPDF (fitz) for extraction and text parsing
-- **Language & Runtime**: Python 3.13 (or your exact version, e.g. 3.13.5)
+- **Language & Runtime**: Python 3.13
 
 ## Project Structure
 

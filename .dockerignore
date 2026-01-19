@@ -1,0 +1,8 @@
+# JetBrains IDE configuration
+.idea/
+
+# Anaconda/environment related files
+anaconda_projects/
+
+# Ignore only this specific notebook inside src/
+src/testing.ipynb
